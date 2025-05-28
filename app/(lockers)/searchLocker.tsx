@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
   Alert,
@@ -107,6 +108,10 @@ export default function LockerMapScreen() {
     }
   };
 
+  const temporarySendToPage = () => {
+    return router.push("/(lockers)/lockersList");
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -137,7 +142,9 @@ export default function LockerMapScreen() {
           )}
 
           <View style={styles.formContainer}>
-            <Text style={styles.title}>Busca por Endereço ou CEP</Text>
+            <Text style={styles.title}>
+              Busque o locker mais perto de você ou de onde deseja!
+            </Text>
 
             <TextInput
               style={styles.input}
@@ -147,7 +154,10 @@ export default function LockerMapScreen() {
               onChangeText={setSearchText}
             />
 
-            <TouchableOpacity style={styles.button} onPress={buscarEndereco}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={temporarySendToPage}
+            >
               <Text style={styles.buttonText}>Buscar</Text>
             </TouchableOpacity>
           </View>
