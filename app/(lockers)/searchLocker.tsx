@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import {
   Alert,
   Dimensions,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -57,16 +58,31 @@ export default function LockerMapScreen() {
         lat = parseFloat(geo[0].lat);
         lon = parseFloat(geo[0].lon);
       } else {
-        const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-            searchText
-          )}`
+        const formattedSearchText = encodeURIComponent(
+          searchText.toLowerCase().replaceAll(" ", "+")
         );
+
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${formattedSearchText}`,
+          {
+            headers: {
+              "User-Agent": "LockerApp/1.0 (https://example.com)",
+              "Accept-Language": "pt-BR",
+            },
+          }
+        );
+
+        if (!geoRes.ok) {
+          return Alert.alert(
+            "Erro ao tentar buscar endereço",
+            "Tente novamente mais tarde"
+          );
+        }
+
         const geo = await geoRes.json();
 
         if (!geo[0]) {
-          Alert.alert("Endereço não encontrado");
-          return;
+          return Alert.alert("Endereço não encontrado");
         }
 
         lat = parseFloat(geo[0].lat);
@@ -90,24 +106,26 @@ export default function LockerMapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        region={region}
-        initialRegion={{
-          latitude: -23.55052,
-          longitude: -46.633308,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
-      >
-        <Marker
-          coordinate={{
-            latitude: region.latitude,
-            longitude: region.longitude,
+      {Platform.OS !== "web" && (
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          region={region}
+          initialRegion={{
+            latitude: -23.55052,
+            longitude: -46.633308,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
           }}
-        />
-      </MapView>
+        >
+          <Marker
+            coordinate={{
+              latitude: region.latitude,
+              longitude: region.longitude,
+            }}
+          />
+        </MapView>
+      )}
 
       <View style={styles.formContainer}>
         <Text style={styles.title}>Busca por Endereço ou CEP</Text>
