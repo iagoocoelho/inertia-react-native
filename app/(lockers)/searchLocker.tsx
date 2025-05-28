@@ -2,11 +2,14 @@ import React, { useRef, useState } from "react";
 import {
   Alert,
   Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
@@ -105,44 +108,52 @@ export default function LockerMapScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {Platform.OS !== "web" && (
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          region={region}
-          initialRegion={{
-            latitude: -23.55052,
-            longitude: -46.633308,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          }}
-        >
-          <Marker
-            coordinate={{
-              latitude: region.latitude,
-              longitude: region.longitude,
-            }}
-          />
-        </MapView>
-      )}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={{ flex: 1 }}>
+          {Platform.OS !== "web" && (
+            <MapView
+              ref={mapRef}
+              style={styles.map}
+              region={region}
+              initialRegion={{
+                latitude: -23.55052,
+                longitude: -46.633308,
+                latitudeDelta: 0.05,
+                longitudeDelta: 0.05,
+              }}
+            >
+              <Marker
+                coordinate={{
+                  latitude: region.latitude,
+                  longitude: region.longitude,
+                }}
+              />
+            </MapView>
+          )}
 
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Busca por Endereço ou CEP</Text>
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>Busca por Endereço ou CEP</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Endereço"
-          placeholderTextColor="#aaa"
-          value={searchText}
-          onChangeText={setSearchText}
-        />
+            <TextInput
+              style={styles.input}
+              placeholder="Endereço"
+              placeholderTextColor="#aaa"
+              value={searchText}
+              onChangeText={setSearchText}
+            />
 
-        <TouchableOpacity style={styles.button} onPress={buscarEndereco}>
-          <Text style={styles.buttonText}>Buscar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+            <TouchableOpacity style={styles.button} onPress={buscarEndereco}>
+              <Text style={styles.buttonText}>Buscar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
