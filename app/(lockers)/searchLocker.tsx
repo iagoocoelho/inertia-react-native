@@ -1,209 +1,208 @@
-import { router } from "expo-router";
-import React, { useRef, useState } from "react";
+import debounce from "lodash.debounce";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Alert,
-  Dimensions,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
+  ActivityIndicator,
+  FlatList,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { WebView } from "react-native-webview";
 
-const { width } = Dimensions.get("window");
+type Suggestion = {
+  place_id: string;
+  display_name: string;
+  lat: string;
+  lon: string;
+};
 
-export default function LockerMapScreen() {
-  const [searchText, setSearchText] = useState("");
-  const [region, setRegion] = useState({
-    latitude: -23.55052,
-    longitude: -46.633308,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  });
+const initialMarkers = [
+  {
+    id: 1,
+    name: "Praça da Sé",
+    lat: -23.5503099,
+    lon: -46.6335474,
+  },
+  {
+    id: 2,
+    name: "Av. Paulista",
+    lat: -23.5614145,
+    lon: -46.6558817,
+  },
+  {
+    id: 3,
+    name: "Parque Ibirapuera",
+    lat: -23.5874166,
+    lon: -46.6576342,
+  },
+];
 
-  const mapRef = useRef(null);
+const HTML_MAP = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Map</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <style>
+      html, body, #map { height: 100%; margin: 0; padding: 0; }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var map = L.map('map').setView([-23.55052, -46.633308], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
 
-  const buscarEndereco = async () => {
-    const isCep = /^\d{5}-?\d{3}$/.test(searchText);
+      var markers = [];
 
-    try {
-      let lat, lon;
-
-      if (isCep) {
-        // Buscar no ViaCEP e depois usar endereço no Nominatim
-        const cepRes = await fetch(
-          `https://viacep.com.br/ws/${searchText.replace("-", "")}/json/`
-        );
-        const cepData = await cepRes.json();
-
-        if (cepData.erro) {
-          Alert.alert("CEP não encontrado");
-          return;
-        }
-
-        const enderecoCompleto = `${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}`;
-        const nominatimRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-            enderecoCompleto
-          )}`
-        );
-        const geo = await nominatimRes.json();
-
-        if (!geo[0]) {
-          Alert.alert("Endereço não encontrado no mapa");
-          return;
-        }
-
-        lat = parseFloat(geo[0].lat);
-        lon = parseFloat(geo[0].lon);
-      } else {
-        const formattedSearchText = encodeURIComponent(
-          searchText.toLowerCase().replaceAll(" ", "+")
-        );
-
-        const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${formattedSearchText}`,
-          {
-            headers: {
-              "User-Agent": "LockerApp/1.0 (https://example.com)",
-              "Accept-Language": "pt-BR",
-            },
-          }
-        );
-
-        if (!geoRes.ok) {
-          return Alert.alert(
-            "Erro ao tentar buscar endereço",
-            "Tente novamente mais tarde"
-          );
-        }
-
-        const geo = await geoRes.json();
-
-        if (!geo[0]) {
-          return Alert.alert("Endereço não encontrado");
-        }
-
-        lat = parseFloat(geo[0].lat);
-        lon = parseFloat(geo[0].lon);
+      function clearMarkers() {
+        markers.forEach(function(marker) {
+          map.removeLayer(marker);
+        });
+        markers = [];
       }
 
-      const novaRegiao = {
-        latitude: lat,
-        longitude: lon,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      };
+      function addMarkers(markerList) {
+        clearMarkers();
+        markerList.forEach(function(m) {
+          var marker = L.marker([m.lat, m.lon]).addTo(map);
+          markers.push(marker);
+        });
+      }
 
-      setRegion(novaRegiao);
+      document.addEventListener("message", function(event) {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "setMarkers" && Array.isArray(data.markers)) {
+            addMarkers(data.markers);
+            if (data.markers.length > 0) {
+              map.setView([data.markers[0].lat, data.markers[0].lon], 15);
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      });
+    </script>
+  </body>
+  </html>
+`;
 
-      mapRef.current?.animateToRegion(novaRegiao, 1000);
-    } catch (err) {
-      Alert.alert("Erro na busca", err.message);
-    }
+export default function LockerMapScreen() {
+  const geoKey = process.env.EXPO_PUBLIC_GEO_KEY;
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const webViewRef = useRef<WebView>(null);
+
+  const sendMarkersToWebView = (markers: { lat: number; lon: number }[]) => {
+    webViewRef.current?.postMessage(
+      JSON.stringify({ type: "setMarkers", markers })
+    );
   };
 
-  const temporarySendToPage = () => {
-    return router.push("/(lockers)/lockersList");
+  useEffect(() => {
+    sendMarkersToWebView(initialMarkers.map(({ lat, lon }) => ({ lat, lon })));
+  }, []);
+
+  const fetchSuggestions = async (text: string) => {
+    if (text.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `https://api.locationiq.com/v1/autocomplete?key=${geoKey}&q=${encodeURIComponent(
+          text
+        )}&limit=5&normalizeaddress=1&countrycodes=br`
+      );
+      const data = await response.json();
+      setSuggestions(data);
+    } catch (err) {
+      setSuggestions([]);
+    }
+
+    setLoading(false);
+  };
+
+  const debouncedSearch = useCallback(debounce(fetchSuggestions, 400), []);
+
+  const handleChangeText = (text: string) => {
+    setQuery(text);
+    debouncedSearch(text);
+  };
+
+  // Quando seleciona uma sugestão, envia o marker correspondente
+  const handleSelect = (item: Suggestion) => {
+    setQuery(item.display_name);
+    setSuggestions([]);
+    sendMarkersToWebView([{ lat: Number(item.lat), lon: Number(item.lon) }]);
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={{ flex: 1 }}>
-          {Platform.OS !== "web" && (
-            <MapView
-              ref={mapRef}
-              style={styles.map}
-              region={region}
-              initialRegion={{
-                latitude: -23.55052,
-                longitude: -46.633308,
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
-              }}
-            >
-              <Marker
-                coordinate={{
-                  latitude: region.latitude,
-                  longitude: region.longitude,
-                }}
-              />
-            </MapView>
-          )}
-
-          <View style={styles.formContainer}>
-            <Text style={styles.title}>
-              Busque o locker mais perto de você ou de onde deseja!
-            </Text>
-
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <View style={styles.searchSection}>
+          <View style={styles.inputContainer}>
             <TextInput
+              placeholder="Digite o endereço..."
+              value={query}
+              onChangeText={handleChangeText}
               style={styles.input}
-              placeholder="Endereço"
-              placeholderTextColor="#aaa"
-              value={searchText}
-              onChangeText={setSearchText}
             />
-
-            <TouchableOpacity
-              style={styles.button}
-              onPress={temporarySendToPage}
-            >
-              <Text style={styles.buttonText}>Buscar</Text>
-            </TouchableOpacity>
+            {loading && <ActivityIndicator size="small" color="#000" />}
           </View>
+          <FlatList
+            data={suggestions}
+            keyExtractor={(item) => item.place_id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.suggestionItem}
+                onPress={() => handleSelect(item)}
+              >
+                <Text>{item.display_name}</Text>
+              </TouchableOpacity>
+            )}
+          />
         </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        <WebView
+          ref={webViewRef}
+          originWhitelist={["*"]}
+          source={{ html: HTML_MAP }}
+          style={styles.map}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  formContainer: {
-    position: "absolute",
-    bottom: 40,
-    alignSelf: "center",
-    width: width * 0.9,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    borderRadius: 20,
-    padding: 20,
-  },
-  title: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-    marginBottom: 10,
-  },
+  container: { flex: 1 },
+  searchSection: { padding: 16, backgroundColor: "#fff", zIndex: 2 },
+  inputContainer: { flexDirection: "row", alignItems: "center" },
   input: {
-    height: 40,
-    backgroundColor: "#fff",
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ccc",
     borderRadius: 8,
-    marginBottom: 10,
-    paddingHorizontal: 10,
+    padding: 8,
+    marginRight: 8,
   },
-  button: {
-    backgroundColor: "#8EFF74",
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
+  suggestionItem: {
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
   },
-  buttonText: {
-    color: "#000",
-    fontWeight: "600",
-  },
+  map: { flex: 1, minHeight: 300 },
 });
