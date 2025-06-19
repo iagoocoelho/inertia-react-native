@@ -1,6 +1,14 @@
+import { getAllLockers } from "@/services/lockers/lockers";
+import { Locker } from "@/services/lockers/types";
 import { router } from "expo-router";
 import debounce from "lodash.debounce";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -19,30 +27,6 @@ type Suggestion = {
   lat: string;
   lon: string;
 };
-
-const initialMarkers = [
-  {
-    id: 1,
-    name: "Praça da Sé",
-    label: "Locker Praça da Sé",
-    lat: -23.5503099,
-    lon: -46.6335474,
-  },
-  {
-    id: 2,
-    name: "Av. Paulista",
-    label: "Locker Av. Paulista",
-    lat: -23.5614145,
-    lon: -46.6558817,
-  },
-  {
-    id: 3,
-    name: "Parque Ibirapuera",
-    label: "Locker Parque Ibirapuera",
-    lat: -23.5874166,
-    lon: -46.6576342,
-  },
-];
 
 const HTML_MAP = `
   <!DOCTYPE html>
@@ -109,11 +93,31 @@ export default function LockerMapScreen() {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingLockers, setLoadingLockers] = useState(true);
+  const [lockers, setLockers] = useState<Locker[]>([]);
   const webViewRef = useRef<WebView>(null);
+
+  const handleGetLockers = useCallback(async () => {
+    try {
+      setLoadingLockers(true);
+      const allLockers = await getAllLockers();
+
+      setLockers(allLockers);
+
+      setLoadingLockers(false);
+    } catch (error) {
+      setLoadingLockers(false);
+      console.error("Error fetching lockers:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    handleGetLockers();
+  }, [handleGetLockers]);
 
   const sendMarkersToWebView = (markers: { lat: number; lon: number }[]) => {
     if (!webViewRef.current) {
-      console.warn("WebView reference is not set");
+      console.warn("WebView reference is not set 2");
       return;
     }
 
@@ -209,23 +213,43 @@ export default function LockerMapScreen() {
             )}
           />
         </View>
-        <WebView
-          ref={webViewRef}
-          originWhitelist={["*"]}
-          source={{ html: HTML_MAP }}
-          style={styles.map}
-          onLoadEnd={() => {
-            sendMarkersToWebView(initialMarkers.map((marker) => marker));
-          }}
-          onMessage={(event) => {
-            try {
-              const data = JSON.parse(event.nativeEvent.data);
-              if (data.type === "markerClick" && data.id) {
-                router.push(`/lockerDetail/${data.id}`);
+
+        {!loadingLockers && (
+          <WebView
+            ref={webViewRef}
+            originWhitelist={["*"]}
+            source={{ html: HTML_MAP }}
+            style={styles.map}
+            onLoadEnd={() => {
+              sendMarkersToWebView(
+                lockers.map((marker) => {
+                  return {
+                    lat: parseFloat(marker.facility.lat),
+                    lon: parseFloat(marker.facility.lon),
+                    id: marker.facility.id,
+                    label: marker.facility.address,
+                  };
+                })
+              );
+            }}
+            onMessage={(event) => {
+              try {
+                const data = JSON.parse(event.nativeEvent.data);
+                if (data.type === "markerClick" && data.id) {
+                  router.push({
+                    pathname: "/(lockers)/lockerList/[facilityId]",
+                    params: { facilityId: data.id },
+                  });
+                }
+              } catch {
+                console.warn(
+                  "Error parsing message from WebView:",
+                  event.nativeEvent.data
+                );
               }
-            } catch {}
-          }}
-        />
+            }}
+          />
+        )}
       </View>
     </SafeAreaView>
   );

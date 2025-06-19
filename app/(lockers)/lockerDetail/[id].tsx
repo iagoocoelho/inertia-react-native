@@ -1,10 +1,13 @@
 import { Container } from "@/components/ui/Container";
+import { getLockersyFacilityId } from "@/services/lockers/lockers";
+import { Locker } from "@/services/lockers/types";
 import {
   FontAwesome5,
   MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
-import React from "react";
+import { useLocalSearchParams } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -15,6 +18,28 @@ import {
 import MapView, { Marker } from "react-native-maps";
 
 export default function LockerDetailScreen() {
+  const [lockersByFacilityId, setLockersByFacilityId] = useState<Locker[]>([]);
+  const [loadingLockers, setLoadingLockers] = useState(false);
+  const { id } = useLocalSearchParams();
+
+  const handleAllLockersByFacilityId = useCallback(async () => {
+    try {
+      setLoadingLockers(true);
+      const lockers = await getLockersyFacilityId(id as string);
+
+      setLockersByFacilityId(lockers);
+
+      setLoadingLockers(false);
+    } catch (error) {
+      setLoadingLockers(false);
+      console.error("Error fetching lockers:", error);
+    }
+  }, [id]);
+
+  React.useEffect(() => {
+    handleAllLockersByFacilityId();
+  }, [handleAllLockersByFacilityId]);
+
   const locker = {
     address: "Av. Sapopemba, 415 - Vila Reg. Feijó, São Paulo - SP, 03345-001",
     latitude: -23.561414,
