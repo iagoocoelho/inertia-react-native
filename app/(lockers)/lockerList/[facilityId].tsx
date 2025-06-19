@@ -51,7 +51,12 @@ export default function LockerList() {
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.card}
-              onPress={() => router.push(`/lockerDetail/${item.id}`)}
+              onPress={() =>
+                router.push({
+                  pathname: "/lockerDetail/[lockerId]",
+                  params: { lockerId: item.id },
+                })
+              }
             >
               <MaterialIcons
                 name="home"
