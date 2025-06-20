@@ -1,17 +1,10 @@
 import backgroundImage from "@/assets/images/background-login.png";
+import UIInput from "@/components/ui/IUInput";
 import PrimaryButton from "@/components/ui/PrimaryButton";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React from "react";
-import {
-  ImageBackground,
-  Linking,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ImageBackground, StyleSheet, Text, View } from "react-native";
 
 export default function HomeScreen() {
   return (
@@ -26,34 +19,16 @@ export default function HomeScreen() {
         <LinearGradient colors={["#000000aa", "#000000cc"]} style={styles.card}>
           <Text style={styles.loginText}>Faça seu login...</Text>
 
-          <View style={styles.inputContainer}>
-            <Ionicons
-              name="mail-outline"
-              size={20}
-              color="#ccc"
-              style={styles.icon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#ccc"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={20}
-              color="#ccc"
-              style={styles.icon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Senha"
-              secureTextEntry
-              placeholderTextColor="#ccc"
-            />
-          </View>
+          <UIInput
+            iconName="mail-outline"
+            placeholder="Email"
+            secureTextEntry={false}
+          />
+          <UIInput
+            iconName="lock-closed-outline"
+            placeholder="Senha"
+            secureTextEntry
+          />
 
           <PrimaryButton
             title="Entrar"
@@ -62,7 +37,10 @@ export default function HomeScreen() {
 
           <Text style={styles.footerText}>
             Não possui uma conta?{" "}
-            <Text style={styles.link} onPress={() => Linking.openURL("#")}>
+            <Text
+              style={styles.link}
+              onPress={() => router.replace("/userRegister")}
+            >
               Criar conta
             </Text>
           </Text>

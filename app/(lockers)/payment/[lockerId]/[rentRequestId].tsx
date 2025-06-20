@@ -1,9 +1,9 @@
-import Accordion from "@/components/ui/Accordion";
 import { Container } from "@/components/ui/Container";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import { getUserId } from "@/services/auth/auth";
-import { getAllLockers, postRentLocker } from "@/services/lockers/lockers";
+import { getAllLockers } from "@/services/lockers/lockers";
 import { Locker } from "@/services/lockers/types";
+import { postPaymentRent } from "@/services/payment/payment";
 import {
   FontAwesome5,
   MaterialCommunityIcons,
@@ -18,16 +18,13 @@ import {
   Text,
   View,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 export default function LockerDetailScreen() {
   const [targetLocker, setTargetLocker] = useState<Locker>();
   const [loadingLockers, setLoadingLockers] = useState(false);
   const [loadingRentLocker, setLoadingRentLocker] = useState(false);
-  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const { lockerId } = useLocalSearchParams();
+  const [value, setValue] = useState(30);
+  const { lockerId, rentRequestId } = useLocalSearchParams();
 
   const handleGetLockers = useCallback(async () => {
     try {
@@ -53,28 +50,23 @@ export default function LockerDetailScreen() {
     handleGetLockers();
   }, [handleGetLockers]);
 
-  const handleRentLocker = async () => {
+  const handlePaymentLocker = async () => {
     try {
       setLoadingRentLocker(true);
 
       const userId = await getUserId();
 
-      if (selectedDate && targetLocker && userId) {
-        const rentLocker = await postRentLocker({
-          lockerId: targetLocker.id,
+      if (targetLocker && userId) {
+        const payment = await postPaymentRent({
+          rentRequestId: rentRequestId as string,
           userId: userId,
-          rentStartDate: new Date().toISOString(),
-          rentFinishDate: selectedDate.toISOString(),
+          amount: value,
+          type: "CREDITO",
+          validated: true,
         });
 
-        if (rentLocker) {
-          return router.push({
-            pathname: "/payment/[lockerId]/[rentRequestId]",
-            params: {
-              rentRequestId: rentLocker.rentRequestId,
-              lockerId: targetLocker.id,
-            },
-          });
+        if (payment) {
+          return router.push("/rentSuccess");
         }
       }
 
@@ -85,24 +77,9 @@ export default function LockerDetailScreen() {
     }
   };
 
-  const showDatePicker = () => {
-    setDatePickerVisibility(true);
-  };
-
-  const hideDatePicker = () => {
-    setDatePickerVisibility(false);
-  };
-
-  const handleConfirm = (date) => {
-    setSelectedDate(date);
-    hideDatePicker();
-  };
-
   return (
     <Container>
       <ScrollView>
-        <Text style={styles.subtitle}>Detalhes do Locker:</Text>
-
         {loadingLockers ? (
           <ActivityIndicator size="large" color="#007bff" />
         ) : !targetLocker ? (
@@ -123,64 +100,7 @@ export default function LockerDetailScreen() {
               </View>
             </View>
 
-            <MapView
-              style={styles.map}
-              initialRegion={{
-                latitude: parseFloat(targetLocker.facility.lat),
-                longitude: parseFloat(targetLocker.facility.lon),
-                latitudeDelta: 0.005,
-                longitudeDelta: 0.005,
-              }}
-            >
-              <Marker
-                coordinate={{
-                  latitude: parseFloat(targetLocker.facility.lat),
-                  longitude: parseFloat(targetLocker.facility.lon),
-                }}
-              />
-            </MapView>
-
-            <View style={styles.card}>
-              <Text style={[styles.cardText, styles.infoTitle]}>
-                Data e hora fim da locação:
-              </Text>
-              <View
-                style={[
-                  styles.row,
-                  { gap: 10, justifyContent: "space-evenly" },
-                ]}
-              >
-                <Text style={styles.cardText}>
-                  {selectedDate
-                    ? `${selectedDate
-                        .toLocaleDateString("pt-BR")
-                        .slice(0, 8)} às ${selectedDate.toLocaleTimeString(
-                        "pt-BR",
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}`
-                    : "Selecione uma data para o fim do aluguel"}
-                </Text>
-
-                <PrimaryButton
-                  onPress={showDatePicker}
-                  title="Selecionar data"
-                />
-
-                <DateTimePickerModal
-                  isDarkModeEnabled
-                  isVisible={isDatePickerVisible}
-                  mode="datetime"
-                  onConfirm={handleConfirm}
-                  onCancel={hideDatePicker}
-                  minimumDate={new Date()}
-                />
-              </View>
-            </View>
-
-            <View style={styles.card}>
+            <View style={[styles.card]}>
               <Text style={[styles.cardText, styles.infoTitle]}>
                 Detalhes do Locker
               </Text>
@@ -220,20 +140,28 @@ export default function LockerDetailScreen() {
                   <Text style={styles.infoText}>Seguro: Sim</Text>
                 </View>
               </View>
-
-              <Accordion title="Informações importantes">
-                <Text style={styles.description}>
-                  Armário 100% Seguro, chaves individuais com desbloqueio via QR
-                  Code. Para desbloquear basta chegar no local, apontar o QR
-                  Code no seu celular para o leitor no cadeado e guardar seus
-                  pertences :)
-                </Text>
-
-                <Text style={styles.description}>Seguro 100% incluso.</Text>
-              </Accordion>
             </View>
 
-            <PrimaryButton onPress={handleRentLocker} title="Alugar" />
+            <View
+              style={{
+                justifyContent: "space-evenly",
+
+                height: "100%",
+              }}
+            >
+              <Text
+                style={{
+                  color: "#000",
+                  fontSize: 42,
+                  fontWeight: "bold",
+                  alignSelf: "center",
+                }}
+              >
+                R$ {value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </Text>
+
+              <PrimaryButton onPress={handlePaymentLocker} title="Pagar" />
+            </View>
           </>
         )}
       </ScrollView>

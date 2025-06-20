@@ -22,7 +22,9 @@ export default function LockerList() {
       setLoadingLockers(true);
       const lockers = await getLockersyFacilityId(facilityId as string);
 
-      setLockersByFacilityId(lockers);
+      const filteredLockers = lockers.filter((locker) => locker.free);
+
+      setLockersByFacilityId(filteredLockers);
 
       setLoadingLockers(false);
     } catch (error) {
@@ -64,7 +66,7 @@ export default function LockerList() {
                 color="#fff"
                 style={styles.icon}
               />
-              <Text style={styles.cardText}>{item.id}</Text>
+              <Text style={styles.cardText}>{item.alias}</Text>
             </TouchableOpacity>
           )}
         />
