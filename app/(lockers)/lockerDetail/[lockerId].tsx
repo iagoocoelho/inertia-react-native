@@ -10,7 +10,7 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,10 +19,71 @@ import {
   Text,
   View,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import WebView from "react-native-webview";
+
+const HTML_MAP = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Map</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <style>
+      html, body, #map { height: 100%; margin: 0; padding: 0; }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var map = L.map('map').setView([-23.55052, -46.633308], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      var markers = [];
+
+      function addMarkers(markerList) {
+        markerList.forEach(function(m) {
+          var marker = L.marker([m.lat, m.lon]).addTo(map);
+          if (m.label) {
+            marker.bindTooltip(m.label, {permanent: true, direction: "top", offset: [-15, -20]});
+          }
+
+          if (m.id) {
+            marker.on('click', function() {
+              window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: "markerClick", id: m.id }));
+            });
+          }
+          markers.push(marker);
+        });
+      }
+
+      document.addEventListener("message", function(event) {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "setMarkers" && Array.isArray(data.markers)) {
+            addMarkers(data.markers);
+            if (data.markers.length > 0) {
+              map.setView([data.markers[0].lat, data.markers[0].lon], 15);
+            }
+          }
+          if (data.type === "centerMap" && data.lat && data.lon) {
+            map.setView([data.lat, data.lon], 15);
+          }
+        } catch (e) {
+          // ignore
+        }
+      });
+    </script>
+  </body>
+  </html>
+`;
 
 export default function LockerDetailScreen() {
+  const webViewRef = useRef<WebView>(null);
   const [targetLocker, setTargetLocker] = useState<Locker>();
   const [loadingLockers, setLoadingLockers] = useState(false);
   const [loadingRentLocker, setLoadingRentLocker] = useState(false);
@@ -108,6 +169,17 @@ export default function LockerDetailScreen() {
     hideDatePicker();
   };
 
+  const sendMarkersToWebView = (markers: { lat: number; lon: number }[]) => {
+    if (!webViewRef.current) {
+      console.warn("WebView reference is not set 2");
+      return;
+    }
+
+    webViewRef.current?.postMessage(
+      JSON.stringify({ type: "setMarkers", markers })
+    );
+  };
+
   return (
     <Container>
       <ScrollView>
@@ -133,22 +205,24 @@ export default function LockerDetailScreen() {
               </View>
             </View>
 
-            <MapView
-              style={styles.map}
-              initialRegion={{
-                latitude: parseFloat(targetLocker.facility.lat),
-                longitude: parseFloat(targetLocker.facility.lon),
-                latitudeDelta: 0.005,
-                longitudeDelta: 0.005,
-              }}
-            >
-              <Marker
-                coordinate={{
-                  latitude: parseFloat(targetLocker.facility.lat),
-                  longitude: parseFloat(targetLocker.facility.lon),
+            {!loadingLockers && (
+              <WebView
+                ref={webViewRef}
+                originWhitelist={["*"]}
+                source={{ html: HTML_MAP }}
+                style={styles.map}
+                onLoadEnd={() => {
+                  sendMarkersToWebView(
+                    [targetLocker].map((marker) => {
+                      return {
+                        lat: parseFloat(marker.facility.lat),
+                        lon: parseFloat(marker.facility.lon),
+                      };
+                    })
+                  );
                 }}
               />
-            </MapView>
+            )}
 
             <View style={styles.card}>
               <Text style={[styles.cardText, styles.infoTitle]}>
@@ -310,6 +384,7 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 12,
     marginBottom: 16,
+    flex: 1,
   },
   button: {
     backgroundColor: "#00FF77",
