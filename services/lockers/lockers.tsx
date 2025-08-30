@@ -28,7 +28,7 @@ export const postRentLocker = async ({
   rentFinishDate,
 }: RentLockerRequest): Promise<RentLockerResponse> => {
   try {
-    const response = await Api.post("/rent", {
+    const response = await Api.post<RentLockerResponse>("/rent", {
       lockerId,
       userId,
       rentStartDate,

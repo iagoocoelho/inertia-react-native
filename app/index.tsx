@@ -1,12 +1,40 @@
 import backgroundImage from "@/assets/images/background-login.png";
 import UIInput from "@/components/ui/IUInput";
 import PrimaryButton from "@/components/ui/PrimaryButton";
+import { postLoginUser } from "@/services/auth/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React from "react";
 import { ImageBackground, StyleSheet, Text, View } from "react-native";
 
 export default function HomeScreen() {
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleLogin = async () => {
+    try {
+      setIsLoading(true);
+
+      const result = await postLoginUser({
+        email,
+        password,
+      });
+
+      await SecureStore.setItemAsync("userid", result.userId);
+
+      if (result.userId) {
+        return router.replace("/home");
+      }
+
+      setIsLoading(false);
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Error fetching lockers:", error);
+    }
+  };
+
   return (
     <ImageBackground
       source={backgroundImage}
@@ -20,11 +48,15 @@ export default function HomeScreen() {
           <Text style={styles.loginText}>Faça seu login...</Text>
 
           <UIInput
+            value={email}
+            onChangeText={setEmail}
             iconName="mail-outline"
             placeholder="Email"
             secureTextEntry={false}
           />
           <UIInput
+            value={password}
+            onChangeText={setPassword}
             iconName="lock-closed-outline"
             placeholder="Senha"
             secureTextEntry
@@ -32,7 +64,8 @@ export default function HomeScreen() {
 
           <PrimaryButton
             title="Entrar"
-            onPress={() => router.replace("/home")}
+            onPress={handleLogin}
+            isLoading={isLoading}
           />
 
           <Text style={styles.footerText}>

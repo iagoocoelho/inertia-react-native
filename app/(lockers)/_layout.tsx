@@ -22,7 +22,7 @@ export default function Layout() {
 
       <Stack.Screen
         name="payment/[lockerId]/[rentRequestId]"
-        options={{ title: "Pagamento do Locker" }}
+        options={{ title: "Pagamento" }}
       />
 
       <Stack.Screen name="qrCode/[qrCodeId]" options={{ headerShown: false }} />

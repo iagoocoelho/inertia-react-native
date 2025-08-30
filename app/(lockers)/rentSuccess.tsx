@@ -1,18 +1,31 @@
 import successRentIcon from "@/assets/images/successRent.png";
 import { Container } from "@/components/ui/Container";
 import PrimaryButton from "@/components/ui/PrimaryButton";
+import { postRentRequestById } from "@/services/payment/payment";
 
-import { useRouter } from "expo-router";
-import React from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 export default function RentSuccess() {
   const router = useRouter();
+  const { rentRequestId }: { rentRequestId: string } = useLocalSearchParams();
+  const [qrCodeId, setQrCodeId] = React.useState<string>("");
+
+  const handleRentRequest = useCallback(async () => {
+    const result = await postRentRequestById({ rentRequestId });
+
+    setQrCodeId(result.openingKey);
+  }, [rentRequestId]);
+
+  useEffect(() => {
+    handleRentRequest();
+  }, [handleRentRequest]);
 
   const handleAccessLocker = () => {
     router.push({
       pathname: "/qrCode/[qrCodeId]",
-      params: { qrCodeId: "STRING" },
+      params: { qrCodeId: qrCodeId },
     });
   };
 

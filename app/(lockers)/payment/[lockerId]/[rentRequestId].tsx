@@ -4,11 +4,7 @@ import { getUserId } from "@/services/auth/auth";
 import { getAllLockers } from "@/services/lockers/lockers";
 import { Locker } from "@/services/lockers/types";
 import { postPaymentRent } from "@/services/payment/payment";
-import {
-  FontAwesome5,
-  MaterialCommunityIcons,
-  MaterialIcons,
-} from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -23,8 +19,7 @@ export default function LockerDetailScreen() {
   const [targetLocker, setTargetLocker] = useState<Locker>();
   const [loadingLockers, setLoadingLockers] = useState(false);
   const [loadingRentLocker, setLoadingRentLocker] = useState(false);
-  const [value, setValue] = useState(30);
-  const { lockerId, rentRequestId } = useLocalSearchParams();
+  const { lockerId, rentRequestId, amount } = useLocalSearchParams();
 
   const handleGetLockers = useCallback(async () => {
     try {
@@ -60,13 +55,18 @@ export default function LockerDetailScreen() {
         const payment = await postPaymentRent({
           rentRequestId: rentRequestId as string,
           userId: userId,
-          amount: value,
+          amount: Number(amount),
           type: "CREDITO",
           validated: true,
         });
 
         if (payment) {
-          return router.push("/rentSuccess");
+          return router.push({
+            pathname: "/rentSuccess",
+            params: {
+              rentRequestId: payment.rentRequestId,
+            },
+          });
         }
       }
 
@@ -100,52 +100,9 @@ export default function LockerDetailScreen() {
               </View>
             </View>
 
-            <View style={[styles.card]}>
-              <Text style={[styles.cardText, styles.infoTitle]}>
-                Detalhes do Locker
-              </Text>
-
-              <View style={styles.infoContainer}>
-                <View style={styles.infoRow}>
-                  <MaterialCommunityIcons
-                    name="arrow-expand-horizontal"
-                    size={16}
-                    color="#fff"
-                  />
-                  <Text style={styles.infoText}>
-                    Largura: {targetLocker.width} m
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <MaterialCommunityIcons
-                    name="arrow-expand-vertical"
-                    size={16}
-                    color="#fff"
-                  />
-                  <Text style={styles.infoText}>
-                    Altura: {targetLocker.height} m
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.infoContainer}>
-                <View style={styles.infoRow}>
-                  <FontAwesome5 name="lock" size={16} color="#fff" />
-                  <Text style={styles.infoText}>Cadeado Smart: Sim</Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <MaterialIcons name="verified-user" size={16} color="#fff" />
-                  <Text style={styles.infoText}>Seguro: Sim</Text>
-                </View>
-              </View>
-            </View>
-
             <View
               style={{
                 justifyContent: "space-evenly",
-
                 height: "100%",
               }}
             >
@@ -157,10 +114,17 @@ export default function LockerDetailScreen() {
                   alignSelf: "center",
                 }}
               >
-                R$ {value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                R${" "}
+                {Number(amount).toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                })}
               </Text>
 
-              <PrimaryButton onPress={handlePaymentLocker} title="Pagar" />
+              <PrimaryButton
+                onPress={handlePaymentLocker}
+                title="Pagar"
+                isLoading={loadingRentLocker}
+              />
             </View>
           </>
         )}

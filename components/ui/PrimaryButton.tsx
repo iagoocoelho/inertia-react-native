@@ -3,11 +3,16 @@ import { StyleSheet, Text, TouchableOpacity } from "react-native";
 type PrimaryButtonProps = {
   title: string;
   onPress: () => void;
+  isLoading?: boolean;
 };
 
-const PrimaryButton = ({ title, onPress }: PrimaryButtonProps) => {
+const PrimaryButton = ({ title, onPress, isLoading }: PrimaryButtonProps) => {
   return (
-    <TouchableOpacity style={styles.button} onPress={onPress}>
+    <TouchableOpacity
+      style={styles.button}
+      onPress={onPress}
+      disabled={isLoading}
+    >
       <Text style={styles.buttonText}>{title}</Text>
     </TouchableOpacity>
   );

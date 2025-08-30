@@ -29,4 +29,5 @@ export interface RentLockerResponse {
   rentStartDate: string;
   rentFinishDate: string;
   openingKey: string;
+  amount: string;
 }

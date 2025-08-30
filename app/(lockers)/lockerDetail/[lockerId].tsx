@@ -13,6 +13,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -73,6 +74,7 @@ export default function LockerDetailScreen() {
             params: {
               rentRequestId: rentLocker.rentRequestId,
               lockerId: targetLocker.id,
+              amount: rentLocker.amount,
             },
           });
         }
@@ -94,6 +96,14 @@ export default function LockerDetailScreen() {
   };
 
   const handleConfirm = (date) => {
+    const now = new Date();
+
+    if (date.getTime() < now.getTime()) {
+      Alert.alert("Data inválida", "Escolha uma data/hora futura!");
+      hideDatePicker();
+      return;
+    }
+
     setSelectedDate(date);
     hideDatePicker();
   };
@@ -161,7 +171,7 @@ export default function LockerDetailScreen() {
                           minute: "2-digit",
                         }
                       )}`
-                    : "Selecione uma data para o fim do aluguel"}
+                    : "Selecione uma DATA FIM da locação"}
                 </Text>
 
                 <PrimaryButton
@@ -176,6 +186,7 @@ export default function LockerDetailScreen() {
                   onConfirm={handleConfirm}
                   onCancel={hideDatePicker}
                   minimumDate={new Date()}
+                  minuteInterval={30}
                 />
               </View>
             </View>
@@ -233,7 +244,11 @@ export default function LockerDetailScreen() {
               </Accordion>
             </View>
 
-            <PrimaryButton onPress={handleRentLocker} title="Alugar" />
+            <PrimaryButton
+              onPress={handleRentLocker}
+              title="Alugar"
+              isLoading={loadingRentLocker}
+            />
           </>
         )}
       </ScrollView>

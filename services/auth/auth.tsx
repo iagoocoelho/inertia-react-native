@@ -9,6 +9,10 @@ export type UserRegisterDataRequest = {
   email: string;
   password: string;
 };
+export type UserLoginRequest = {
+  email: string;
+  password: string;
+};
 
 export interface UserRegisterDataResponse extends UserRegisterDataRequest {
   id: string;
@@ -19,6 +23,18 @@ export const postRegisterUser = async ({
 }: UserRegisterDataRequest): Promise<UserRegisterDataResponse> => {
   try {
     const response = await Api.post("/user", user);
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const postLoginUser = async ({
+  ...user
+}: UserLoginRequest): Promise<{ userId: string }> => {
+  try {
+    const response = await Api.post("/user/login", user);
 
     return response.data;
   } catch (error) {
