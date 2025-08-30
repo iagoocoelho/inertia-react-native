@@ -6,7 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React from "react";
-import { ImageBackground, StyleSheet, Text, View } from "react-native";
+import { Alert, ImageBackground, StyleSheet, Text, View } from "react-native";
 
 export default function HomeScreen() {
   const [email, setEmail] = React.useState("");
@@ -31,7 +31,7 @@ export default function HomeScreen() {
       setIsLoading(false);
     } catch (error) {
       setIsLoading(false);
-      console.error("Error fetching lockers:", error);
+      Alert.alert("Falha ao logar!", error.data);
     }
   };
 

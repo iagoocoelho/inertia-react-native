@@ -8,8 +8,7 @@ import QRCode from "react-native-qrcode-svg";
 
 export default function QRCodeScreen() {
   const router = useRouter();
-  const { qrCodeId } = useLocalSearchParams();
-  const qrValue = "MINHA_STRING_AQUI";
+  const { qrCodeId }: { qrCodeId: string } = useLocalSearchParams();
 
   return (
     <Container>
@@ -22,7 +21,7 @@ export default function QRCodeScreen() {
       >
         <View style={styles.container}>
           <View style={styles.qrCode}>
-            <QRCode value={qrValue} size={180} />
+            <QRCode value={qrCodeId} size={180} />
           </View>
 
           <View style={styles.wrapText}>
