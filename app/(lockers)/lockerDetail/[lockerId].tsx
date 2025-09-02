@@ -277,9 +277,7 @@ export default function LockerDetailScreen() {
                     size={16}
                     color="#fff"
                   />
-                  <Text style={styles.infoText}>
-                    Largura: {targetLocker.width} m
-                  </Text>
+                  <Text style={styles.infoText}>Largura: 30 cm</Text>
                 </View>
 
                 <View style={styles.infoRow}>
@@ -288,9 +286,7 @@ export default function LockerDetailScreen() {
                     size={16}
                     color="#fff"
                   />
-                  <Text style={styles.infoText}>
-                    Altura: {targetLocker.height} m
-                  </Text>
+                  <Text style={styles.infoText}>Altura: 50 cm</Text>
                 </View>
               </View>
 
