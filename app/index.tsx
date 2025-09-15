@@ -1,14 +1,15 @@
 import backgroundImage from "@/assets/images/background-login.png";
 import UIInput from "@/components/ui/IUInput";
 import PrimaryButton from "@/components/ui/PrimaryButton";
+import { useSession } from "@/context/authContext";
 import { postLoginUser } from "@/services/auth/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React from "react";
 import { Alert, ImageBackground, StyleSheet, Text, View } from "react-native";
 
 export default function HomeScreen() {
+  const { signIn } = useSession();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
@@ -22,16 +23,19 @@ export default function HomeScreen() {
         password,
       });
 
-      await SecureStore.setItemAsync("userid", result.userId);
+      debugger;
+      signIn(result.userId, result.userId);
 
       if (result.userId) {
         return router.replace("/home");
       }
-
-      setIsLoading(false);
     } catch (error) {
       setIsLoading(false);
-      Alert.alert("Falha ao logar!", error.data);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Ocorreu um erro desconhecido.";
+      Alert.alert("Falha ao logar!", errorMessage);
     }
   };
 
