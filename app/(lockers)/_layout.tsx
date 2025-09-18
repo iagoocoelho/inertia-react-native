@@ -25,6 +25,11 @@ export default function Layout() {
         options={{ title: "Pagamento" }}
       />
 
+      <Stack.Screen
+        name="myBookings/myBookingsList"
+        options={{ title: "Minhas Reservas" }}
+      />
+
       <Stack.Screen name="qrCode/[qrCodeId]" options={{ headerShown: false }} />
     </Stack>
   );

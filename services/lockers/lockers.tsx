@@ -40,3 +40,15 @@ export const postRentLocker = async ({
     throw error;
   }
 };
+
+export const getMyBookingsByUserId = async (
+  userId: string
+): Promise<RentLockerResponse[]> => {
+  try {
+    const response = await Api.get(`/rent/user/${userId}`);
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

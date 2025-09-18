@@ -27,7 +27,14 @@ export default function HomeScreen() {
           <Text style={styles.cardText}>Lockers</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card}>
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() =>
+            router.push({
+              pathname: "/(lockers)/myBookings/myBookingsList",
+            })
+          }
+        >
           <Ionicons name="home" size={24} color="#fff" />
           <Text style={styles.cardTextWhite}>Minhas Reservas</Text>
         </TouchableOpacity>
