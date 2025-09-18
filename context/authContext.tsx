@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       new Date(userInfo.expiration) > new Date()
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userInfo.accessToken]);
 
   useEffect(() => {
     const IS_AUTHENTICATED = isAuthenticated();

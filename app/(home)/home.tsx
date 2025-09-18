@@ -1,16 +1,19 @@
 import { Container } from "@/components/ui/Container";
+import { useAuth } from "@/context/authContext";
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function HomeScreen() {
+  const { logout } = useAuth();
+
   return (
     <Container>
       <View style={styles.header}>
         <Ionicons name="menu" size={24} />
         <Text style={styles.welcome}>Bem vindo</Text>
-        <Ionicons name="notifications-outline" size={24} />
+        <Ionicons name="log-out-outline" size={24} onPress={logout} />
       </View>
 
       <Text style={styles.appTitle}>InertiaAPP</Text>
