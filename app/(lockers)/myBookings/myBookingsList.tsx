@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function MyBookingsList() {
@@ -36,6 +37,21 @@ export default function MyBookingsList() {
     handleMyBookingsList();
   }, [handleMyBookingsList]);
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+
+    return {
+      date: date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+      }),
+      time: date.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  };
+
   return (
     <Container>
       <Text style={styles.subtitle}>Reservas feitas:</Text>
@@ -49,15 +65,19 @@ export default function MyBookingsList() {
       ) : (
         <FlatList
           data={myBookings}
-          keyExtractor={(item) => item.lockerId}
+          key={
+            myBookings.length > 0 ? myBookings[0].rentRequestId : "empty_list"
+          }
+          style={{ width: "100%", display: "flex" }}
+          keyExtractor={(item, index) => item.rentRequestId + "_" + index}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.card}
               onPress={() =>
                 router.push({
-                  pathname: "/lockerDetail/[lockerId]",
-                  params: { lockerId: item.lockerId },
+                  pathname: "/(lockers)/qrCode/[qrCodeId]",
+                  params: { qrCodeId: item.openingKey },
                 })
               }
             >
@@ -67,7 +87,20 @@ export default function MyBookingsList() {
                 color="#fff"
                 style={styles.icon}
               />
-              <Text style={styles.cardText}>{item.amount}</Text>
+
+              <View style={styles.containerText}>
+                <Text style={styles.cardText}>{item.amount}</Text>
+
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text style={styles.cardSmall}>Data fim</Text>
+                  <Text style={[styles.cardText, { fontWeight: "bold" }]}>
+                    {formatDate(item.rentFinishDate).date}
+                  </Text>
+                  <Text style={[styles.cardText, { fontWeight: "bold" }]}>
+                    {formatDate(item.rentFinishDate).time}
+                  </Text>
+                </View>
+              </View>
             </TouchableOpacity>
           )}
         />
@@ -104,5 +137,15 @@ const styles = StyleSheet.create({
   cardText: {
     color: "#fff",
     fontSize: 14,
+  },
+  containerText: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flex: 1,
+  },
+  cardSmall: {
+    color: "#fff",
+    fontSize: 12,
   },
 });
