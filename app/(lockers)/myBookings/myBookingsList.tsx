@@ -65,9 +65,6 @@ export default function MyBookingsList() {
       ) : (
         <FlatList
           data={myBookings}
-          key={
-            myBookings.length > 0 ? myBookings[0].rentRequestId : "empty_list"
-          }
           style={{ width: "100%", display: "flex" }}
           keyExtractor={(item, index) => item.rentRequestId + "_" + index}
           contentContainerStyle={styles.list}
@@ -77,7 +74,7 @@ export default function MyBookingsList() {
               onPress={() =>
                 router.push({
                   pathname: "/(lockers)/qrCode/[qrCodeId]",
-                  params: { qrCodeId: item.openingKey },
+                  params: { qrCodeId: item.openingKey, isByBooking: "true" },
                 })
               }
             >
@@ -89,10 +86,11 @@ export default function MyBookingsList() {
               />
 
               <View style={styles.containerText}>
-                <Text style={styles.cardText}>{item.amount}</Text>
+                <Text style={[styles.cardText, { fontSize: 11, flex: 1 }]}>
+                  {item.locker.alias} - {item.locker.facility.address}
+                </Text>
 
                 <View style={{ alignItems: "flex-end" }}>
-                  <Text style={styles.cardSmall}>Data fim</Text>
                   <Text style={[styles.cardText, { fontWeight: "bold" }]}>
                     {formatDate(item.rentFinishDate).date}
                   </Text>
@@ -136,7 +134,7 @@ const styles = StyleSheet.create({
   },
   cardText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 12,
   },
   containerText: {
     flexDirection: "row",
@@ -146,6 +144,6 @@ const styles = StyleSheet.create({
   },
   cardSmall: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: 10,
   },
 });

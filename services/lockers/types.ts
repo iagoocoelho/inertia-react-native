@@ -24,7 +24,12 @@ export interface RentLockerRequest {
 
 export interface RentLockerResponse {
   rentRequestId: string;
-  lockerId: string;
+  locker: {
+    id: string;
+    facility: Facility;
+    alias: string;
+    lockerModel: string;
+  };
   userId: string;
   rentStartDate: string;
   rentFinishDate: string;

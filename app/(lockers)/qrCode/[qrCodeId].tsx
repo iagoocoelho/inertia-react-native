@@ -8,7 +8,8 @@ import QRCode from "react-native-qrcode-svg";
 
 export default function QRCodeScreen() {
   const router = useRouter();
-  const { qrCodeId }: { qrCodeId: string } = useLocalSearchParams();
+  const { qrCodeId, isByBooking }: { qrCodeId: string; isByBooking: "true" } =
+    useLocalSearchParams();
 
   return (
     <Container>
@@ -33,9 +34,13 @@ export default function QRCodeScreen() {
             </Text>
 
             <PrimaryButton
-              title="Voltar para home"
+              title={`${!!isByBooking ? "Voltar" : "Ir para Home"} `}
               onPress={() => {
-                router.replace("/home");
+                if (isByBooking === "true") {
+                  router.back();
+                } else {
+                  router.replace("/home");
+                }
               }}
             />
           </View>

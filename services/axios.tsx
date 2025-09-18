@@ -37,7 +37,6 @@ Api.interceptors.request.use(
   (config) => {
     const accessToken = SecureStore.getItem("accessToken");
 
-    console.log("REQUEST INTERCEPTOR TOKEN", accessToken);
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
