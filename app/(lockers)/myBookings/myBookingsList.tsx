@@ -54,7 +54,7 @@ export default function MyBookingsList() {
 
   return (
     <Container>
-      <Text style={styles.subtitle}>Reservas feitas:</Text>
+      <Text style={styles.subtitle}>Minhas reservas:</Text>
 
       {loadingLockers ? (
         <ActivityIndicator size="large" color="#007bff" />
