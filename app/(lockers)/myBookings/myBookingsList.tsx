@@ -29,7 +29,6 @@ export default function MyBookingsList() {
       setLoadingLockers(false);
     } catch (error) {
       setLoadingLockers(false);
-      console.error("Error fetching lockers:", error);
     }
   }, [userInfo.userId]);
 

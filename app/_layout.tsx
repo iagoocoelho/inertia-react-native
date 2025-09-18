@@ -40,10 +40,11 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={isAuthenticated()}>
         <Stack.Screen name="(home)/home" />
+        <Stack.Screen name="(lockers)" />
+        <Stack.Screen name="(userRegister)" />
       </Stack.Protected>
 
       <Stack.Screen name="index" />
-
       <Stack.Screen name="+not-found" />
     </Stack>
   );

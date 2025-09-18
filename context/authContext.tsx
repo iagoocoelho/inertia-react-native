@@ -1,4 +1,3 @@
-import { setupInterceptors } from "@/hooks/useAxiosInstance";
 import * as SecureStore from "expo-secure-store";
 import React, {
   createContext,
@@ -7,6 +6,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { Alert } from "react-native";
 
 export type AuthContextType = {
   userInfo: UserInfo;
@@ -30,7 +30,7 @@ async function setSecureStorageItemAsync(key: string, value: string | null) {
   if (value == null) {
     await SecureStore.deleteItemAsync(key);
   } else {
-    await SecureStore.setItemAsync(key, value);
+    SecureStore.setItem(key, value);
   }
 }
 
@@ -55,13 +55,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [userInfo.accessToken]);
 
   useEffect(() => {
-    const IS_AUTHENTICATED = isAuthenticated();
+    if (!userInfo.expiration) return;
 
-    if (IS_AUTHENTICATED) {
-      setupInterceptors(userInfo.accessToken);
+    const expirationDate = new Date(userInfo.expiration).getTime();
+    const now = Date.now();
+
+    if (expirationDate <= now) {
+      logout(true);
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+
+    const timeout = setTimeout(() => {
+      logout(true);
+    }, expirationDate - now);
+
+    return () => clearTimeout(timeout);
+  }, [userInfo.expiration]);
 
   async function login(user: UserInfo) {
     setUserInfo({
@@ -72,10 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       refreshExpiration: user.refreshExpiration,
     });
 
+    await setSecureStorageItemAsync("accessToken", user.accessToken);
     await setSecureStorageItemAsync("refreshToken", user.refreshToken);
   }
 
-  async function logout() {
+  async function logout(expired = false) {
     setUserInfo({
       accessToken: "",
       userId: "",
@@ -85,6 +95,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     await setSecureStorageItemAsync("refreshToken", null);
+    await setSecureStorageItemAsync("accessToken", null);
+
+    if (expired) {
+      Alert.alert(
+        "Ops! Sua sessão expirou.",
+        "Entre novamente para continuar usando."
+      );
+    }
   }
 
   return (

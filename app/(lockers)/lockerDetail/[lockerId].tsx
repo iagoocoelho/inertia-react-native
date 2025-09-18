@@ -249,7 +249,7 @@ export default function LockerDetailScreen() {
 
                 <PrimaryButton
                   onPress={showDatePicker}
-                  title="Selecionar data"
+                  title={`${selectedDate ? "Alterar" : "Selecionar"} Data`}
                 />
 
                 <DateTimePickerModal
@@ -259,7 +259,7 @@ export default function LockerDetailScreen() {
                   onConfirm={handleConfirm}
                   onCancel={hideDatePicker}
                   minimumDate={new Date()}
-                  minuteInterval={30}
+                  minuteInterval={5}
                 />
               </View>
             </View>
