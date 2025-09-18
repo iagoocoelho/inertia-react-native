@@ -1,5 +1,4 @@
-import * as SecureStore from "expo-secure-store";
-import { Api } from "../axios";
+import { Api, ApiLogin } from "../axios";
 
 export type UserRegisterDataRequest = {
   name: string;
@@ -13,6 +12,14 @@ export type UserLoginRequest = {
   email: string;
   password: string;
 };
+
+interface UserLoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  userId: string;
+  expiration: string;
+  refreshExpiration: string;
+}
 
 export interface UserRegisterDataResponse extends UserRegisterDataRequest {
   id: string;
@@ -32,22 +39,12 @@ export const postRegisterUser = async ({
 
 export const postLoginUser = async ({
   ...user
-}: UserLoginRequest): Promise<{ userId: string }> => {
+}: UserLoginRequest): Promise<UserLoginResponse> => {
   try {
-    const response = await Api.post("/user/login", user);
+    const response = await ApiLogin.post("/login", user);
 
     return response.data;
   } catch (error) {
     throw error;
-  }
-};
-
-export const getUserId = async (): Promise<string | null> => {
-  try {
-    const userId = await SecureStore.getItemAsync("userid");
-    return userId;
-  } catch (error) {
-    console.error("Error retrieving user ID:", error);
-    return null;
   }
 };

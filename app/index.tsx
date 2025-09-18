@@ -1,18 +1,18 @@
 import backgroundImage from "@/assets/images/background-login.png";
 import UIInput from "@/components/ui/IUInput";
 import PrimaryButton from "@/components/ui/PrimaryButton";
-import { useSession } from "@/context/authContext";
+import { useAuth } from "@/context/authContext";
 import { postLoginUser } from "@/services/auth/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { Alert, ImageBackground, StyleSheet, Text, View } from "react-native";
 
 export default function HomeScreen() {
-  const { signIn } = useSession();
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [isLoading, setIsLoading] = React.useState(false);
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
     try {
@@ -23,8 +23,13 @@ export default function HomeScreen() {
         password,
       });
 
-      debugger;
-      signIn(result.userId, result.userId);
+      await login({
+        accessToken: result.accessToken,
+        userId: result.userId,
+        expiration: result.expiration,
+        refreshToken: result.refreshToken,
+        refreshExpiration: result.refreshExpiration,
+      });
 
       if (result.userId) {
         return router.replace("/home");
@@ -69,7 +74,7 @@ export default function HomeScreen() {
           <PrimaryButton
             title="Entrar"
             onPress={handleLogin}
-            isLoading={isLoading}
+            isLoading={isLoading || !email || !password}
           />
 
           <Text style={styles.footerText}>

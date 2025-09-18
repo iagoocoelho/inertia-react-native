@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const Api = axios.create({
+const ApiLogin = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
   headers: {
     Accept: "application/json",
@@ -8,11 +8,11 @@ const Api = axios.create({
   },
 });
 
-Api.interceptors.request.use(async (config) => {
+ApiLogin.interceptors.request.use(async (config) => {
   return config;
 });
 
-Api.interceptors.response.use(
+ApiLogin.interceptors.response.use(
   async (response) => response,
   async (error) => {
     if (error.response.status === 500) {
@@ -25,4 +25,11 @@ Api.interceptors.response.use(
   }
 );
 
-export { Api };
+const Api = axios.create({
+  baseURL: process.env.EXPO_PUBLIC_API_URL,
+  headers: {
+    Accept: "application/json",
+  },
+});
+
+export { Api, ApiLogin };

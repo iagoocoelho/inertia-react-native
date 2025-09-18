@@ -4,7 +4,6 @@ import PrimaryButton from "@/components/ui/PrimaryButton";
 import { postRegisterUser } from "@/services/auth/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React, { useState } from "react";
 import {
   ImageBackground,
@@ -38,8 +37,6 @@ export default function UserRegister() {
       });
 
       if (response) {
-        await SecureStore.setItemAsync("userid", response.id);
-
         return router.replace("/(userRegister)/successPage");
       }
     } catch (error) {

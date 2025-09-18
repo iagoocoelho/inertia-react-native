@@ -8,7 +8,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
-import { SessionProvider, useSession } from "@/context/authContext";
+import { AuthProvider, useAuth } from "@/context/authContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function RootLayout() {
@@ -25,26 +25,24 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <SessionProvider>
+      <AuthProvider>
         <RootNavigator />
         <StatusBar style="auto" />
-      </SessionProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
 
 function RootNavigator() {
-  const { session } = useSession();
+  const { isAuthenticated } = useAuth();
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={isAuthenticated()}>
         <Stack.Screen name="(home)/home" />
       </Stack.Protected>
 
-      <Stack.Protected guard={!session}>
-        <Stack.Screen name="index" />
-      </Stack.Protected>
+      <Stack.Screen name="index" />
 
       <Stack.Screen name="+not-found" />
     </Stack>

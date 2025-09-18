@@ -1,6 +1,6 @@
 import { Container } from "@/components/ui/Container";
 import PrimaryButton from "@/components/ui/PrimaryButton";
-import { getUserId } from "@/services/auth/auth";
+import { useAuth } from "@/context/authContext";
 import { getAllLockers } from "@/services/lockers/lockers";
 import { Locker } from "@/services/lockers/types";
 import { postPaymentRent } from "@/services/payment/payment";
@@ -20,6 +20,7 @@ export default function LockerDetailScreen() {
   const [loadingLockers, setLoadingLockers] = useState(false);
   const [loadingRentLocker, setLoadingRentLocker] = useState(false);
   const { lockerId, rentRequestId, amount } = useLocalSearchParams();
+  const { userInfo } = useAuth();
 
   const handleGetLockers = useCallback(async () => {
     try {
@@ -49,12 +50,10 @@ export default function LockerDetailScreen() {
     try {
       setLoadingRentLocker(true);
 
-      const userId = await getUserId();
-
-      if (targetLocker && userId) {
+      if (targetLocker && userInfo.userId) {
         const payment = await postPaymentRent({
           rentRequestId: rentRequestId as string,
-          userId: userId,
+          userId: userInfo.userId,
           amount: Number(amount),
           type: "CREDITO",
           validated: true,

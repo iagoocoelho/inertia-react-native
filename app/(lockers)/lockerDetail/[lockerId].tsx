@@ -1,7 +1,7 @@
 import Accordion from "@/components/ui/Accordion";
 import { Container } from "@/components/ui/Container";
 import PrimaryButton from "@/components/ui/PrimaryButton";
-import { getUserId } from "@/services/auth/auth";
+import { useAuth } from "@/context/authContext";
 import { getAllLockers, postRentLocker } from "@/services/lockers/lockers";
 import { Locker } from "@/services/lockers/types";
 import {
@@ -90,6 +90,7 @@ export default function LockerDetailScreen() {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { lockerId } = useLocalSearchParams();
+  const { userInfo } = useAuth();
 
   const handleGetLockers = useCallback(async () => {
     try {
@@ -119,12 +120,10 @@ export default function LockerDetailScreen() {
     try {
       setLoadingRentLocker(true);
 
-      const userId = await getUserId();
-
-      if (selectedDate && targetLocker && userId) {
+      if (selectedDate && targetLocker && userInfo.userId) {
         const rentLocker = await postRentLocker({
           lockerId: targetLocker.id,
-          userId: userId,
+          userId: userInfo.userId,
           rentStartDate: new Date().toISOString(),
           rentFinishDate: selectedDate.toISOString(),
         });
