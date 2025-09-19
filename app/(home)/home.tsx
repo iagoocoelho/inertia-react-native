@@ -13,7 +13,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Ionicons name="menu" size={24} />
         <Text style={styles.welcome}>Bem vindo</Text>
-        <Ionicons name="log-out-outline" size={24} onPress={logout} />
+        <Ionicons name="log-out-outline" size={24} onPress={() => logout()} />
       </View>
 
       <Text style={styles.appTitle}>InertiaAPP</Text>

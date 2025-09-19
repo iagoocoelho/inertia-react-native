@@ -12,7 +12,7 @@ export type AuthContextType = {
   userInfo: UserInfo;
   setUserInfo: (userInfo: UserInfo) => void;
   login: (user: UserInfo) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: (expired?: boolean) => Promise<void>;
   isAuthenticated: () => boolean;
 };
 
